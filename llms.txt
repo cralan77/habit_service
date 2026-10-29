@@ -1,0 +1,16 @@
+# habit_service — LLM Context Summary
+
+> Microservice for Habits, Flexible/Fixed Routines, To-Do List & Consistency Analytics in the Personal Assistant (Habitus / Aurora AI) ecosystem.
+> Status: Specification Approved (Ready for Implementation)
+
+## Quick Facts
+- **Port**: `:8083`
+- **Stack**: Kotlin 2.2.20, Spring Boot 4.0.7, Java 21, Spring Data JPA, Flyway, PostgreSQL (`appdb` / `appdb_homolog`, local `:5435`), JWT Security (`UserIdentifierResolver`).
+- **Schedule Types**: `DAILY`, `FIXED_WEEKLY`, `FLEXIBLE_WEEKLY` (quota $N$/week), `FIXED_MONTHLY`, `FLEXIBLE_MONTHLY` (quota $N$/month). Week start day is user-configurable (default `MONDAY`).
+- **Completion Modes**: `CHECK` (binary), `QUANTITATIVE` (incremental daily target), `TODO_LINKED` (auto-progressed by completing To-Do items via category or direct link, with automatic reversal if reopened), `HEALTH_AUTO` (auto-checked by `health_service` workouts, daily steps, or weight/body measurements).
+- **Analytics**: Separates Fixed Today vs. Flexible Quota on Daily View; combines all in Weekly/Monthly Expected vs. Achieved charts with per-habit 100% cap on overall consistency rate + raw overachievement (`4/3`) display, Streaks (with `SKIPPED` freeze support), Heatmap, and Trend Line.
+
+## Key Documentation Links
+- Full Technical Specification: `docs/PROJECT_DOCUMENTATION.md`
+- Step-by-Step Implementation Plan: `docs/IMPLEMENTATION_ROADMAP.md`
+- Product Decisions Matrix: `docs/SPECIFICATION.md`
