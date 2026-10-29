@@ -1,0 +1,56 @@
+name: CI/CD - Build and Push Docker Image (Homolog)
+
+on:
+  push:
+    branches: [ "homolog" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: cralan77/habit-service:homolog
+
+      - name: Trigger ArgoCD Deploy in Infra Repo
+        if: success()
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -n "$GH_PAT" ]; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git clone https://x-access-token:${GH_PAT}@github.com/cralan77/infra.git infra-repo
+            cd infra-repo
+            git checkout homolog
+            TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            sed -i "s|kubectl.kubernetes.io/restartedAt:.*|kubectl.kubernetes.io/restartedAt: \"$TIMESTAMP\"|g" apps-homolog/habit-service-homolog.yaml
+            git add apps-homolog/habit-service-homolog.yaml
+            git commit -m "chore(deploy): trigger homolog rollout for habit-service [${{ github.sha }}]"
+            for i in {1..5}; do
+              git pull --rebase origin homolog && git push origin homolog && break || (sleep 2 && git fetch origin homolog)
+            done
+          else
+            echo "GH_PAT secret not configured, skipping auto-update of infra repo."
+          fi
